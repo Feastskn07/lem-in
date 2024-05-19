@@ -68,7 +68,7 @@ Which corresponds to the following representation :
 ```
 ### Instructions
 - You need to create tunnels and rooms.
-- A room will never start with the letter L or with # and must have no spaces.
+- A room will never start with the letter `L` or with `#` and must have no spaces.
 - You join the rooms together with as many tunnels as you need.
 - A tunnel joins only two rooms together never more than that.
 - A room can be linked to multiple rooms.
