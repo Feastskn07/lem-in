@@ -2,11 +2,29 @@ package main
 
 import (
 	"bufio"
+	"container/list"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 )
+
+type Room struct {
+	name  string
+	x, y  int
+	edges []*Edge
+}
+
+type Edge struct {
+	to       *Room
+	capacity int
+	flow     int
+	reverse  *Edge
+}
+
+type Graph struct {
+	rooms map[string]*Room
+}
 
 func NewGraph() *Graph {
 	return &Graph{rooms: make(map[string]*Room)}
@@ -122,6 +140,92 @@ func input(filename string) (int, *Graph, string, string) {
 		os.Exit(1)
 	}
 	return numAnts, graph, startRoom, endRoom
+}
+
+func edmondsKarp(graph *Graph, source, sink string) int {
+	totalFlow := 0
+	parent := make(map[*Room]*Edge)
+	for BFS(graph, source, sink, parent) {
+		pathFlow := int(^uint(0) >> 1)
+		for v := graph.rooms[sink]; v.name != source; v = parent[v].reverse.to {
+			pathFlow = min(pathFlow, parent[v].capacity-parent[v].flow)
+		}
+		for v := graph.rooms[sink]; v.name != source; v = parent[v].reverse.to {
+			parent[v].flow += pathFlow
+			parent[v].reverse.flow -= pathFlow
+		}
+		totalFlow += pathFlow
+	}
+	return totalFlow
+}
+
+func BFS(graph *Graph, source, sink string, parent map[*Room]*Edge) bool {
+	visited := make(map[string]bool)
+	queue := list.New()
+	queue.PushBack(graph.rooms[source])
+	visited[source] = true
+	for queue.Len() > 0 {
+		current := queue.Front().Value.(*Room)
+		queue.Remove(queue.Front())
+		for _, edge := range current.edges {
+			if !visited[edge.to.name] && edge.flow < edge.capacity {
+				visited[edge.to.name] = true
+				parent[edge.to] = edge
+				queue.PushBack(edge.to)
+				if edge.to.name == sink {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func simAnts(numAnts int, graph *Graph, source, sink string) {
+	type ant struct {
+		id   int
+		path []*Room
+	}
+	antPaths := make([][]*Room, numAnts)
+	for i := 0; i < numAnts; i++ {
+		antPaths[i] = []*Room{graph.rooms[source]}
+	}
+	steps := 0
+	for {
+		moveCount := 0
+		steps++
+		fmt.Printf("Step %d: \n", steps)
+		for i := 0; i < numAnts; i++ {
+			ant := antPaths[i]
+			if len(ant) == 0 {
+				continue
+			}
+			currentRoom := ant[len(ant)-1]
+			if currentRoom.name == sink {
+				continue
+			}
+			for _, edge := range currentRoom.edges {
+				if edge.flow > 0 && edge.to.name != source {
+					edge.flow--
+					antPaths[i] = append(antPaths[i], edge.to)
+					fmt.Printf("L%d-%s ", i+1, edge.to.name)
+					moveCount++
+					break
+				}
+			}
+		}
+		if moveCount == 0 {
+			break
+		}
+		fmt.Println()
+	}
 }
 
 func main() {
