@@ -22,7 +22,6 @@ func main() {
 
 	filename := os.Args[1]
 
-	// Dosyayı aç
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Dosya açılamadı:", err)
@@ -38,6 +37,7 @@ func main() {
 	readingRooms := false
 	isStartRoom := false
 	isEndRoom := false
+	corridors := false
 
 	lineCount := 0
 	for scanner.Scan() {
@@ -45,12 +45,10 @@ func main() {
 		parts := strings.Fields(line)
 		lineCount++
 
-		// Boş satırları atla
 		if len(parts) == 0 {
 			continue
 		}
 
-		// İlk satırda karınca sayısını oku
 		if totalAnts == 0 {
 			totalAnts, err = strconv.Atoi(parts[0])
 			if err != nil {
@@ -60,7 +58,6 @@ func main() {
 			continue
 		}
 
-		// ##start ve ##end işaretlerini kontrol et
 		if parts[0] == "##start" {
 			isStartRoom = true
 			readingRooms = true
@@ -71,7 +68,6 @@ func main() {
 			continue
 		}
 
-		// Odaları oku
 		if readingRooms {
 			if len(parts) != 3 {
 				fmt.Printf("Hatalı oda formatı: %s, satır: %d\n", line, lineCount)
@@ -85,29 +81,32 @@ func main() {
 			} else if isEndRoom {
 				endRoom = roomName
 				isEndRoom = false
+				corridors = true
+				readingRooms = false
 			}
 			continue
 		}
 
-		// Koridorları oku
-		if len(parts) == 1 && strings.Contains(parts[0], "-") {
-			corridorParts := strings.Split(parts[0], "-")
-			if len(corridorParts) != 2 {
-				fmt.Printf("Hatalı koridor formatı: %s, satır: %d\n", line, lineCount)
-				return
+		if corridors {
+			if len(parts) == 1 && strings.Contains(parts[0], "-") {
+				corridorParts := strings.Split(parts[0], "-")
+				if len(corridorParts) != 2 {
+					fmt.Printf("Hatalı koridor formatı: %s, satır: %d\n", line, lineCount)
+					return
+				}
+				fromRoom := corridorParts[0]
+				toRoom := corridorParts[1]
+				if _, ok := rooms[fromRoom]; !ok {
+					fmt.Printf("Bilinmeyen oda: %s, satır: %d\n", fromRoom, lineCount)
+					return
+				}
+				if _, ok := rooms[toRoom]; !ok {
+					fmt.Printf("Bilinmeyen oda: %s, satır: %d\n", toRoom, lineCount)
+					return
+				}
+				rooms[fromRoom].connections = append(rooms[fromRoom].connections, toRoom)
+				rooms[toRoom].connections = append(rooms[toRoom].connections, fromRoom)
 			}
-			fromRoom := corridorParts[0]
-			toRoom := corridorParts[1]
-			if _, ok := rooms[fromRoom]; !ok {
-				fmt.Printf("Bilinmeyen oda: %s, satır: %d\n", fromRoom, lineCount)
-				return
-			}
-			if _, ok := rooms[toRoom]; !ok {
-				fmt.Printf("Bilinmeyen oda: %s, satır: %d\n", toRoom, lineCount)
-				return
-			}
-			rooms[fromRoom].connections = append(rooms[fromRoom].connections, toRoom)
-			rooms[toRoom].connections = append(rooms[toRoom].connections, fromRoom)
 		}
 	}
 
@@ -115,24 +114,30 @@ func main() {
 		fmt.Println("Hata:", err)
 	}
 
-	// Verileri ekrana bas
-	fmt.Println("Total Ants:", totalAnts)
-	fmt.Println("Start Room:", startRoom)
-	fmt.Println("End Room:", endRoom)
-	fmt.Println("Rooms:", rooms)
+	fmt.Println(totalAnts)
 
-	// Yolları bul
-	paths := findPaths(rooms, startRoom, endRoom)
-	fmt.Println("Bulunan Yollar:", paths)
+	// Print rooms and start/end rooms
+	fmt.Println("##start")
+	fmt.Println(startRoom)
+	for roomName, room := range rooms {
+		if roomName != startRoom && roomName != endRoom {
+			fmt.Println(roomName, strings.Join(room.connections, " "))
+		}
+	}
+	fmt.Println("##end")
+	fmt.Println(endRoom)
 
-	// Karıncaları yollar arasında dağıtma
-	antPaths := assignAntsToPaths(totalAnts, paths)
-	for ant, path := range antPaths {
-		fmt.Printf("Karınca %d, Yol: %v\n", ant, path)
+	// Print links
+	for _, room := range rooms {
+		for _, connection := range room.connections {
+			fmt.Printf("%s-%s\n", room.name, connection)
+		}
 	}
 
-	// Karıncaları hareket ettir ve adım adım ilerlet
-	// Bu kısım da algoritmanıza göre tamamlanacaktır
+	paths := findPaths(rooms, startRoom, endRoom)
+	antPaths := assignAntsToPaths(totalAnts, paths)
+	printAntPaths(antPaths)
+
 }
 
 func findPaths(rooms map[string]*Room, start string, end string) [][]string {
@@ -186,4 +191,24 @@ func assignAntsToPaths(totalAnts int, paths [][]string) map[int][]string {
 	}
 
 	return antPaths
+}
+
+func printAntPaths(antPaths map[int][]string) {
+	for step := 0; ; step++ {
+		var line string
+		finished := true
+		for ant, path := range antPaths {
+			if step < len(path)-1 {
+				if len(line) > 0 {
+					line += " "
+				}
+				line += fmt.Sprintf("L%d-%s", ant, path[step+1])
+				finished = false
+			}
+		}
+		if finished {
+			break
+		}
+		fmt.Println(line)
+	}
 }
