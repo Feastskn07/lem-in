@@ -37,9 +37,16 @@ func main() {
 	var startRoom, endRoom string
 	var readingRooms bool = false
 
+	lineCount := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Fields(line)
+		lineCount++
+
+		// Boş satırları atla
+		if len(parts) == 0 {
+			continue
+		}
 
 		// İlk satırda karınca sayısını oku
 		if totalAnts == 0 {
@@ -54,26 +61,45 @@ func main() {
 		// ##start ve ##end işaretlerini kontrol et
 		if parts[0] == "##start" {
 			readingRooms = true
-			startRoom = parts[1]
 			continue
 		} else if parts[0] == "##end" {
 			readingRooms = true
-			endRoom = parts[1]
 			continue
 		}
 
 		// Odaları oku
-		if readingRooms && len(parts) == 3 {
+		if readingRooms {
+			if len(parts) != 3 {
+				fmt.Printf("Hatalı oda formatı: %s, satır: %d\n", line, lineCount)
+				return
+			}
 			roomName := parts[0]
 			rooms[roomName] = &Room{name: roomName, visited: false, connections: []string{}}
+			if parts[0] == startRoom {
+				startRoom = roomName
+			} else if parts[0] == endRoom {
+				endRoom = roomName
+			}
 			continue
 		}
 
 		// Koridorları oku
 		if len(parts) == 1 && strings.Contains(parts[0], "-") {
 			corridorParts := strings.Split(parts[0], "-")
+			if len(corridorParts) != 2 {
+				fmt.Printf("Hatalı koridor formatı: %s, satır: %d\n", line, lineCount)
+				return
+			}
 			fromRoom := corridorParts[0]
 			toRoom := corridorParts[1]
+			if _, ok := rooms[fromRoom]; !ok {
+				fmt.Printf("Bilinmeyen oda: %s, satır: %d\n", fromRoom, lineCount)
+				return
+			}
+			if _, ok := rooms[toRoom]; !ok {
+				fmt.Printf("Bilinmeyen oda: %s, satır: %d\n", toRoom, lineCount)
+				return
+			}
 			rooms[fromRoom].connections = append(rooms[fromRoom].connections, toRoom)
 			rooms[toRoom].connections = append(rooms[toRoom].connections, fromRoom)
 		}
