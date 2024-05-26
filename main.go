@@ -12,6 +12,7 @@ type Room struct {
 	name        string
 	visited     bool
 	connections []string
+	antsInside  int
 }
 
 func main() {
@@ -74,7 +75,7 @@ func main() {
 				return
 			}
 			roomName := parts[0]
-			rooms[roomName] = &Room{name: roomName, visited: false, connections: []string{}}
+			rooms[roomName] = &Room{name: roomName, visited: false, connections: []string{}, antsInside: 0}
 			if isStartRoom {
 				startRoom = roomName
 				isStartRoom = false
@@ -114,47 +115,29 @@ func main() {
 		fmt.Println("Hata:", err)
 	}
 
-	fmt.Println(totalAnts)
+	// Find shortest path
+	shortestPath := findShortestPath(rooms, startRoom, endRoom)
 
-	// Print rooms and start/end rooms
-	fmt.Println("##start")
-	fmt.Println(startRoom)
-	for roomName, room := range rooms {
-		if roomName != startRoom && roomName != endRoom {
-			fmt.Println(roomName, strings.Join(room.connections, " "))
-		}
-	}
-	fmt.Println("##end")
-	fmt.Println(endRoom)
+	// Assign ants to paths
+	antPaths := assignAntsToPaths(totalAnts, shortestPath, rooms)
 
-	// Print links
-	for _, room := range rooms {
-		for _, connection := range room.connections {
-			fmt.Printf("%s-%s\n", room.name, connection)
-		}
-	}
-
-	paths := findPaths(rooms, startRoom, endRoom)
-	antPaths := assignAntsToPaths(totalAnts, paths)
-	printAntPaths(antPaths)
-
+	// Print results
+	printResults(totalAnts, antPaths)
 }
 
-func findPaths(rooms map[string]*Room, start string, end string) [][]string {
-	var paths [][]string
-	var queue [][]string
+func findShortestPath(rooms map[string]*Room, start string, end string) []string {
+	var path []string
 
-	queue = append(queue, []string{start})
+	queue := [][]string{{start}}
 
 	for len(queue) > 0 {
-		path := queue[0]
+		path = queue[0]
 		queue = queue[1:]
 
 		lastRoom := path[len(path)-1]
 
 		if lastRoom == end {
-			paths = append(paths, path)
-			continue
+			break
 		}
 
 		for _, connection := range rooms[lastRoom].connections {
@@ -166,7 +149,7 @@ func findPaths(rooms map[string]*Room, start string, end string) [][]string {
 		}
 	}
 
-	return paths
+	return path
 }
 
 func contains(slice []string, item string) bool {
@@ -178,37 +161,67 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-func assignAntsToPaths(totalAnts int, paths [][]string) map[int][]string {
+func assignAntsToPaths(totalAnts int, shortestPath []string, rooms map[string]*Room) map[int][]string {
 	antPaths := make(map[int][]string)
-	pathIndex := 0
 
+	// Initialize ants at the start room
 	for ant := 1; ant <= totalAnts; ant++ {
-		antPaths[ant] = paths[pathIndex]
-		pathIndex++
-		if pathIndex >= len(paths) {
-			pathIndex = 0
+		antPaths[ant] = []string{shortestPath[0]}
+	}
+
+	// Calculate next room for each ant based on available space in rooms
+	for i := 1; i < len(shortestPath)-1; i++ {
+		currentRoom := shortestPath[i]
+		nextRoom := shortestPath[i+1]
+
+		// Calculate total ants and rooms in the current room
+		totalAntsInCurrentRoom := 0
+		totalRoomsInCurrentRoom := len(rooms[currentRoom].connections) + 1 // including itself
+		for _, conn := range rooms[currentRoom].connections {
+			totalAntsInCurrentRoom += rooms[conn].antsInside
+		}
+
+		// Check if next room has enough space for the next ant
+		if totalAntsInCurrentRoom < totalRoomsInCurrentRoom {
+			for ant := i + 1; ant <= totalAnts; ant++ {
+				antPaths[ant] = append(antPaths[ant], nextRoom)
+				rooms[nextRoom].antsInside++
+			}
+		} else {
+			// If next room doesn't have enough space, place the ants behind
+			for ant := i + 1; ant <= totalAnts; ant++ {
+				antPaths[ant] = append([]string{currentRoom}, antPaths[ant]...)
+				rooms[currentRoom].antsInside++
+			}
 		}
 	}
 
 	return antPaths
 }
 
-func printAntPaths(antPaths map[int][]string) {
-	for step := 0; ; step++ {
-		var line string
-		finished := true
-		for ant, path := range antPaths {
-			if step < len(path)-1 {
-				if len(line) > 0 {
-					line += " "
-				}
-				line += fmt.Sprintf("L%d-%s", ant, path[step+1])
-				finished = false
-			}
-		}
-		if finished {
-			break
-		}
-		fmt.Println(line)
+func printResults(totalAnts int, antPaths map[int][]string) {
+	// Print input file contents
+	inputFile, err := os.Open(os.Args[1])
+	if err != nil {
+		fmt.Println("Dosya açılamadı:", err)
+		return
+	}
+	defer inputFile.Close()
+
+	scanner := bufio.NewScanner(inputFile)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Dosya okunamadı:", err)
+		return
+	}
+
+	// Print a blank line
+	fmt.Println()
+
+	// Print ant paths
+	for ant := 1; ant <= totalAnts; ant++ {
+		fmt.Printf("L%d-%s\n", ant, strings.Join(antPaths[ant], " "))
 	}
 }
