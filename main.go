@@ -35,7 +35,9 @@ func main() {
 	var totalAnts int
 	rooms := make(map[string]*Room)
 	var startRoom, endRoom string
-	var readingRooms bool = false
+	readingRooms := false
+	isStartRoom := false
+	isEndRoom := false
 
 	lineCount := 0
 	for scanner.Scan() {
@@ -60,9 +62,11 @@ func main() {
 
 		// ##start ve ##end işaretlerini kontrol et
 		if parts[0] == "##start" {
+			isStartRoom = true
 			readingRooms = true
 			continue
 		} else if parts[0] == "##end" {
+			isEndRoom = true
 			readingRooms = true
 			continue
 		}
@@ -75,10 +79,12 @@ func main() {
 			}
 			roomName := parts[0]
 			rooms[roomName] = &Room{name: roomName, visited: false, connections: []string{}}
-			if parts[0] == startRoom {
+			if isStartRoom {
 				startRoom = roomName
-			} else if parts[0] == endRoom {
+				isStartRoom = false
+			} else if isEndRoom {
 				endRoom = roomName
+				isEndRoom = false
 			}
 			continue
 		}
