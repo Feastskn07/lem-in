@@ -1,0 +1,10 @@
+1- Giriş dosyasını aç
+2- Karınca sayısını `totalAnts` değişkenine ata
+3- Başlangıç odasının ismini ve koordinatlarını al
+4- Bağlantı odalarının isimlerini ve koordinatlarını al
+5- Bitiş odasının ismini ve koordinatlarını al
+6- Odalar arasında koridorları oluştur
+7- Başlangıçtan bitişe giden yolları `yol` değişkenine ata
+8- Her odada 1 karınca olması gerektiği için karınca olan odaların değerini true olmayanları false yap
+9- Giriş dosyasını yazdır
+10- Başlangıçtan false olan odalara karınca gönderip `L'karıncaId'-'odaIsmı'` şeklinde çıktı ver

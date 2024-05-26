@@ -1,0 +1,6 @@
+1- Bulunan yollar kısadan uzuna sıralanacak.
+2- 1 numaralı karınca en kısa yola gönderilecek.
+3- Yoldaki oda sayısı ile yola gönderilen karınca sayısını topla ve tot değişkeninde sakla.
+4- Sonraki yolun oda sayısı ile tot değişkenini kıyasla. Eğer tot oda sayısından büyükse bir sonraki karıncayı o yola gönder. Değilse bir önceki karınca ile aynı yola gönder.
+5- 3 ve 4 numaralı adımı karıncaları tüm yollara gönderene kadar tekrarla.
+6- Karıncalar yollarda sıraya sokulduktan sonra hepsini adım adım ilerlet.

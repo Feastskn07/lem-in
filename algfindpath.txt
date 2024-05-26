@@ -1,0 +1,8 @@
+1- Odaların ziyaret edilip edilmediğine dair bool değerleri olacak.
+2- Başlangıç odasından giden koridorlara sırasıyla geçiş yapılacak.
+3- Ziyaret edilen odaların bool değerleri 1 olarak değiştirilecek.
+4- Sonraki koridorlardan sırasıyla gidilip ziyaret edilen odaların bool değerleri 1 olarak değiştirilecek.
+5- Adım 4 Çıkış odasına varan ilk koridora kadar tekrar edecek.
+6- Çıkış odasına ulaşılan ilk güzergah path1 olarak kaydedilecek.
+7- Path1 de ziyaret edilen odaların bool değerleri 1 olarak kalacak diğer odalar 0 olarak güncellenecek.
+8- Başlangıca bağlı odalar 1 olana kadar 2. adımdan başlanıp işlemler tekrarlanacak.
